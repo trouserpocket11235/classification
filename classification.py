@@ -22,8 +22,10 @@
  ***************************************************************************/
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
-from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtGui import QIcon, QFont, QColor
 from qgis.PyQt.QtWidgets import QAction
+
+from qgis.core import QgsPalLayerSettings, QgsTextFormat, QgsTextBufferSettings, QgsVectorLayerSimpleLabeling
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -188,6 +190,11 @@ class Classification:
         if self.first_start == True:
             self.first_start = False
             self.dlg = ClassificationDialog()
+            # Layer auflisten
+            for filename in os.listdir(self.plugin_dir+"/data"):
+                if (filename[-4:] == ".xml"):
+                    self.dlg.datum.addItem(filename[17:-27]+"-"+filename[21:-25]+"-"+filename[23:-23])
+                    name = filename[:-7]
 
         # show the dialog
         self.dlg.show()
@@ -197,4 +204,14 @@ class Classification:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
+
+            uri = self.plugin_dir+"/data/"+name+"B5.tif"
+            uri2 = self.plugin_dir+"/data/"+name+"B4.tif"
+
+            classification = self.iface.addRasterLayer(uri, "NIR "+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16])
+            classification = self.iface.addRasterLayer(uri2, "Red "+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16])
+
+
+
+            classification.triggerRepaint()
             pass
