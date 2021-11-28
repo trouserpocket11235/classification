@@ -25,7 +25,8 @@ from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon, QFont, QColor
 from qgis.PyQt.QtWidgets import QAction
 
-from qgis.core import QgsPalLayerSettings, QgsTextFormat, QgsTextBufferSettings, QgsVectorLayerSimpleLabeling
+from qgis.core import QgsPalLayerSettings, QgsRasterLayer, QgsProject
+from qgis.analysis import QgsRasterCalculator, QgsRasterCalculatorEntry
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -194,7 +195,6 @@ class Classification:
             for filename in os.listdir(self.plugin_dir+"/data"):
                 if (filename[-4:] == ".xml"):
                     self.dlg.datum.addItem(filename[17:-27]+"-"+filename[21:-25]+"-"+filename[23:-23])
-                    name = filename[:-7]
 
         # show the dialog
         self.dlg.show()
@@ -204,14 +204,48 @@ class Classification:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
-
+            print(self.dlg.datum.currentText()[:-6]+self.dlg.datum.currentText()[5:-3]+self.dlg.datum.currentText()[8:])
+            for filename in os.listdir(self.plugin_dir+"/data"):
+                if (filename[17:-23] == self.dlg.datum.currentText()[:-6]+self.dlg.datum.currentText()[5:-3]+self.dlg.datum.currentText()[8:] and filename[-4:] == ".xml"):
+                    name = filename[:-7]
+            #NIR
             uri = self.plugin_dir+"/data/"+name+"B5.tif"
+            #Red
             uri2 = self.plugin_dir+"/data/"+name+"B4.tif"
 
-            classification = self.iface.addRasterLayer(uri, "NIR "+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16])
-            classification = self.iface.addRasterLayer(uri2, "Red "+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16])
+            #define short versions of the layernames
+            nir = "NIR "+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
+            red = "Red "+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
 
+            #add Layers NIR and Red to Project
+            classification = self.iface.addRasterLayer(uri, nir)
+            classification = self.iface.addRasterLayer(uri2, red)
 
+            layer = QgsProject.instance().mapLayersByName(nir)[0]
+            layer2 = QgsProject.instance().mapLayersByName(red)[0]
+
+            #RasterLayer to RasterCalculatorEntry
+            entries = []
+            layernir = QgsRasterCalculatorEntry()
+            layernir.ref = 'layernir@1'
+            layernir.raster = layer
+            layernir.bandNumber = 1
+            entries.append(layernir)
+
+            layerred = QgsRasterCalculatorEntry()
+            layerred.ref = 'layerred@1'
+            layerred.raster = layer2
+            layerred.bandNumber = 1
+            entries.append(layerred)
+
+            #Calculation NDVI=(NIR-Red)/(NDVI+Red)
+            calc = QgsRasterCalculator( '("layernir@1" -  "layerred@1") / ("layernir@1" + "layerred@1")', self.plugin_dir+"/data/"+name + "_NDVI.tif", 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
+            calc.processCalculation()
+
+            #add Layer NDVI
+            uri3 = self.plugin_dir+"/data/"+name+"_NDVI.tif"
+            ndvi = "NDVI "+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
+            classification = self.iface.addRasterLayer(uri3, ndvi)
 
             classification.triggerRepaint()
             pass
