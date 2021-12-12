@@ -21,12 +21,16 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
-from qgis.PyQt.QtGui import QIcon, QFont, QColor
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtCore import *
+from qgis.PyQt.QtGui import *
+from qgis.PyQt.QtWidgets import *
+from qgis import core, gui
 
-from qgis.core import QgsPalLayerSettings, QgsRasterLayer, QgsProject
+from qgis.core import *
 from qgis.analysis import QgsRasterCalculator, QgsRasterCalculatorEntry
+from PyQt5 import QtGui, QtCore
+from PyQt5.QtCore import *
+from PyQt5.QtXml import *
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -38,6 +42,8 @@ import os.path
 class Classification:
     """QGIS Plugin Implementation."""
 
+    global layerndvi
+
     def __init__(self, iface):
         """Constructor.
 
@@ -48,6 +54,7 @@ class Classification:
         """
         # Save reference to the QGIS interface
         self.iface = iface
+        self.dlg = ClassificationDialog()
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
         # initialize locale
@@ -65,7 +72,7 @@ class Classification:
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&Classification')
-
+        #self.dlg.ndvi.clear()
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
@@ -157,21 +164,115 @@ class Classification:
                 action)
 
         self.actions.append(action)
-
         return action
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
+        self.dlg = ClassificationDialog()
         icon_path = ':/plugins/classification/icon.png'
         self.add_action(
             icon_path,
-            text=self.tr(u''),
+            text=self.tr(u'&Classification'),
             callback=self.run,
             parent=self.iface.mainWindow())
-
         # will be set False in run()
         self.first_start = True
+
+    def startNDVI(self):
+        #for filename in os.listdir(self.plugin_dir+"/data"):
+        #    if (filename[17:-23] == self.dlg.datum.currentText()[:-6]+self.dlg.datum.currentText()[5:-3]+self.dlg.datum.currentText()[8:] and filename[-4:] == ".xml"):
+        #        name = filename[:-7]
+        #NIR
+        #uri = self.plugin_dir+"/data/"+name+"B5.tif"
+        #Red
+        #uri2 = self.plugin_dir+"/data/"+name+"B4.tif"
+
+        #NIR
+        uri = self.dlg.FileNIR.filePath()
+        #Red
+        uri2 = self.dlg.FileRed.filePath()
+
+        #define short versions of the layernames
+        nir = "NIR "#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
+        red = "Red "#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
+
+        #add Layers NIR and Red to Project
+        classification = self.iface.addRasterLayer(uri, nir)
+        classification = self.iface.addRasterLayer(uri2, red)
+
+        layer = QgsProject.instance().mapLayersByName(nir)[0]
+        layer2 = QgsProject.instance().mapLayersByName(red)[0]
+
+        #RasterLayer to RasterCalculatorEntry
+        entries = []
+        layernir = QgsRasterCalculatorEntry()
+        layernir.ref = 'layernir@1'
+        layernir.raster = layer
+        layernir.bandNumber = 1
+        entries.append(layernir)
+
+        layerred = QgsRasterCalculatorEntry()
+        layerred.ref = 'layerred@1'
+        layerred.raster = layer2
+        layerred.bandNumber = 1
+        entries.append(layerred)
+
+        #Calculation NDVI=(NIR-Red)/(NDVI+Red)
+        calc = QgsRasterCalculator( '("layernir@1" -  "layerred@1") / ("layernir@1" + "layerred@1")', self.plugin_dir+"/data/_NDVI.tif", 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
+        calc.processCalculation()
+
+        #add Layer NDVI
+        uri3 = self.plugin_dir+"/data/_NDVI.tif"
+        ndvi = "NDVI"#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
+        classification = self.iface.addRasterLayer(uri3, ndvi)
+        layerndvi = QgsProject.instance().mapLayersByName(ndvi)[0]
+        #Rastershader Object
+        s = QgsRasterShader()
+        #Ramp Shader
+        c = QgsColorRampShader()
+        #Interpolatedshader (?)
+        c.setColorRampType(QgsColorRampShader.Discrete)
+        #stats = layerndvi.dataProvider().bandStatistics(1, QgsRasterBandStats.All)
+        i = []
+        i.append(QgsColorRampShader.ColorRampItem(0, QtGui.QColor('#00008B'), 'Wasser'))
+        #i.append(QgsColorRampShader.ColorRampItem(-0.5, QtGui.QColor(‘#fdae61’), ‘900’))
+        i.append(QgsColorRampShader.ColorRampItem(0.3, QtGui.QColor('#999999'), '???'))
+        #i.append(QgsColorRampShader.ColorRampItem(0.2, QtGui.QColor(‘#abdda4’), ‘2000’))
+        i.append(QgsColorRampShader.ColorRampItem(1, QtGui.QColor('#228B22'), 'Wald'))
+        c.setColorRampItemList(i)
+        s.setRasterShaderFunction(c)
+        ps = QgsSingleBandPseudoColorRenderer(layerndvi.dataProvider(), 1, s)
+        layerndvi.setRenderer(ps)
+        QgsProject.instance().addMapLayer(layerndvi)
+        classification.triggerRepaint()
+
+
+    def newcolor(self, flag):
+        c_water = self.dlg.colorWater.toPlainText()
+        c_veg = self.dlg.colorVeg.toPlainText()
+        layerndvi = QgsProject.instance().mapLayersByName("NDVI")[0]
+        #Rastershader Object
+        s = QgsRasterShader()
+        #Ramp Shader
+        c = QgsColorRampShader()
+        #Interpolatedshader (?)
+        c.setColorRampType(QgsColorRampShader.Discrete)
+        i = []
+        i.append(QgsColorRampShader.ColorRampItem((self.dlg.SliderWater.value()/1000), QtGui.QColor(c_water), 'Wasser'))
+        i.append(QgsColorRampShader.ColorRampItem((self.dlg.SliderVegetation.value()/1000), QtGui.QColor('#999999'), '???'))
+        i.append(QgsColorRampShader.ColorRampItem(1, QtGui.QColor(c_veg), 'Wald'))
+        c.setColorRampItemList(i)
+        s.setRasterShaderFunction(c)
+        ps = QgsSingleBandPseudoColorRenderer(layerndvi.dataProvider(), 1, s)
+        layerndvi.setRenderer(ps)
+        QgsProject.instance().addMapLayer(layerndvi)
+        layerndvi.triggerRepaint()
+
+    def updateLabel_Water(self, value):
+        self.dlg.label_Water.setText(str(value/1000))
+
+    def updateLabel_Veg(self, value):
+        self.dlg.label_Veg.setText(str(value/1000))
 
 
     def unload(self):
@@ -191,10 +292,13 @@ class Classification:
         if self.first_start == True:
             self.first_start = False
             self.dlg = ClassificationDialog()
-            # Layer auflisten
-            for filename in os.listdir(self.plugin_dir+"/data"):
-                if (filename[-4:] == ".xml"):
-                    self.dlg.datum.addItem(filename[17:-27]+"-"+filename[21:-25]+"-"+filename[23:-23])
+            self.dlg.startndvi.clicked.connect(self.startNDVI)
+            self.dlg.label_Water.setText("0")
+            self.dlg.SliderWater.valueChanged.connect(self.updateLabel_Water)
+            self.dlg.label_Veg.setText("0.3")
+            self.dlg.SliderVegetation.valueChanged.connect(self.updateLabel_Veg)
+            self.dlg.color.clicked.connect(self.newcolor)
+            self.dlg.setWindowFlags(Qt.WindowStaysOnTopHint)
 
         # show the dialog
         self.dlg.show()
@@ -204,48 +308,5 @@ class Classification:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
-            print(self.dlg.datum.currentText()[:-6]+self.dlg.datum.currentText()[5:-3]+self.dlg.datum.currentText()[8:])
-            for filename in os.listdir(self.plugin_dir+"/data"):
-                if (filename[17:-23] == self.dlg.datum.currentText()[:-6]+self.dlg.datum.currentText()[5:-3]+self.dlg.datum.currentText()[8:] and filename[-4:] == ".xml"):
-                    name = filename[:-7]
-            #NIR
-            uri = self.plugin_dir+"/data/"+name+"B5.tif"
-            #Red
-            uri2 = self.plugin_dir+"/data/"+name+"B4.tif"
 
-            #define short versions of the layernames
-            nir = "NIR "+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
-            red = "Red "+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
-
-            #add Layers NIR and Red to Project
-            classification = self.iface.addRasterLayer(uri, nir)
-            classification = self.iface.addRasterLayer(uri2, red)
-
-            layer = QgsProject.instance().mapLayersByName(nir)[0]
-            layer2 = QgsProject.instance().mapLayersByName(red)[0]
-
-            #RasterLayer to RasterCalculatorEntry
-            entries = []
-            layernir = QgsRasterCalculatorEntry()
-            layernir.ref = 'layernir@1'
-            layernir.raster = layer
-            layernir.bandNumber = 1
-            entries.append(layernir)
-
-            layerred = QgsRasterCalculatorEntry()
-            layerred.ref = 'layerred@1'
-            layerred.raster = layer2
-            layerred.bandNumber = 1
-            entries.append(layerred)
-
-            #Calculation NDVI=(NIR-Red)/(NDVI+Red)
-            calc = QgsRasterCalculator( '("layernir@1" -  "layerred@1") / ("layernir@1" + "layerred@1")', self.plugin_dir+"/data/"+name + "_NDVI.tif", 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
-            calc.processCalculation()
-
-            #add Layer NDVI
-            uri3 = self.plugin_dir+"/data/"+name+"_NDVI.tif"
-            ndvi = "NDVI "+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
-            classification = self.iface.addRasterLayer(uri3, ndvi)
-
-            classification.triggerRepaint()
             pass
