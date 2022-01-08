@@ -31,6 +31,7 @@ from qgis.analysis import QgsRasterCalculator, QgsRasterCalculatorEntry
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import *
 from PyQt5.QtXml import *
+from PyQt5.QtWidgets import QApplication
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -179,20 +180,14 @@ class Classification:
         self.first_start = True
 
     def startNDVI(self):
-        #for filename in os.listdir(self.plugin_dir+"/data"):
-        #    if (filename[17:-23] == self.dlg.datum.currentText()[:-6]+self.dlg.datum.currentText()[5:-3]+self.dlg.datum.currentText()[8:] and filename[-4:] == ".xml"):
-        #        name = filename[:-7]
+        QApplication.setOverrideCursor(Qt.WaitCursor)
         #NIR
-        #uri = self.plugin_dir+"/data/"+name+"B5.tif"
+        uri = self.dlg.fileNIR.filePath()
         #Red
-        #uri2 = self.plugin_dir+"/data/"+name+"B4.tif"
-
-        #NIR
-        uri = self.dlg.FileNIR.filePath()
-        #Red
-        uri2 = self.dlg.FileRed.filePath()
+        uri2 = self.dlg.fileRed.filePath()
 
         #define short versions of the layernames
+        #to do: if Landsat 8, Landsat 7, ...
         nir = "NIR "#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
         red = "Red "#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
 
@@ -218,11 +213,11 @@ class Classification:
         entries.append(layerred)
 
         #Calculation NDVI=(NIR-Red)/(NDVI+Red)
-        calc = QgsRasterCalculator( '("layernir@1" -  "layerred@1") / ("layernir@1" + "layerred@1")', self.plugin_dir+"/data/_NDVI.tif", 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
+        calc = QgsRasterCalculator( '((("layernir@1" -  "layerred@1") / ("layernir@1" + "layerred@1"))+1)*100', self.plugin_dir+"/data/NDVI.tif", 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
         calc.processCalculation()
 
         #add Layer NDVI
-        uri3 = self.plugin_dir+"/data/_NDVI.tif"
+        uri3 = self.plugin_dir+"/data/NDVI.tif"
         ndvi = "NDVI"#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
         classification = self.iface.addRasterLayer(uri3, ndvi)
         layerndvi = QgsProject.instance().mapLayersByName(ndvi)[0]
@@ -234,22 +229,89 @@ class Classification:
         c.setColorRampType(QgsColorRampShader.Discrete)
         #stats = layerndvi.dataProvider().bandStatistics(1, QgsRasterBandStats.All)
         i = []
-        i.append(QgsColorRampShader.ColorRampItem(0, QtGui.QColor('#00008B'), 'Wasser'))
+        i.append(QgsColorRampShader.ColorRampItem(100, QtGui.QColor('#00008B'), 'Wasser'))
         #i.append(QgsColorRampShader.ColorRampItem(-0.5, QtGui.QColor(‘#fdae61’), ‘900’))
-        i.append(QgsColorRampShader.ColorRampItem(0.3, QtGui.QColor('#999999'), '???'))
+        i.append(QgsColorRampShader.ColorRampItem(130, QtGui.QColor('#999999'), '???'))
         #i.append(QgsColorRampShader.ColorRampItem(0.2, QtGui.QColor(‘#abdda4’), ‘2000’))
-        i.append(QgsColorRampShader.ColorRampItem(1, QtGui.QColor('#228B22'), 'Wald'))
+        i.append(QgsColorRampShader.ColorRampItem(200, QtGui.QColor('#228B22'), 'Wald'))
         c.setColorRampItemList(i)
         s.setRasterShaderFunction(c)
         ps = QgsSingleBandPseudoColorRenderer(layerndvi.dataProvider(), 1, s)
         layerndvi.setRenderer(ps)
         QgsProject.instance().addMapLayer(layerndvi)
         classification.triggerRepaint()
+        QApplication.restoreOverrideCursor()
+
+    def ladeDatei(self):
+
+        #NIR
+        uri = self.dlg.file_single.filePath()
+        name = "Ausgangsdaten"
+        classification = self.iface.addRasterLayer(uri, name)
+        singlelayer = QgsProject.instance().mapLayersByName(name)[0]
+        i = singlelayer.bandCount()
+        for j in range(i):
+            self.dlg.combo_red.addItem("Band " + str(j))
+            self.dlg.combo_nir.addItem("Band " + str(j))
+
+
+    def startNDVI_single(self):
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        #NIR
+        band_nir = int(self.dlg.combo_nir.currentText()[-1])
+        #Red
+        band_red = int(self.dlg.combo_red.currentText()[-1])
+
+        layer = QgsProject.instance().mapLayersByName("Ausgangsdaten")[0]
+
+        #RasterLayer to RasterCalculatorEntry
+        entries = []
+        layernir = QgsRasterCalculatorEntry()
+        layernir.ref = 'layernir@1'
+        layernir.raster = layer
+        layernir.bandNumber = band_nir
+        entries.append(layernir)
+
+        layerred = QgsRasterCalculatorEntry()
+        layerred.ref = 'layerred@1'
+        layerred.raster = layer
+        layerred.bandNumber = band_red
+        entries.append(layerred)
+
+        #Calculation NDVI=(NIR-Red)/(NDVI+Red)
+        calc = QgsRasterCalculator( '((("layernir@1" -  "layerred@1") / ("layernir@1" + "layerred@1"))+1)*100', self.plugin_dir+"/data/NDVI.tif", 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
+        calc.processCalculation()
+
+        #add Layer NDVI
+        uri3 = self.plugin_dir+"/data/NDVI.tif"
+        ndvi = "NDVI"#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
+        classification = self.iface.addRasterLayer(uri3, ndvi)
+        layerndvi = QgsProject.instance().mapLayersByName(ndvi)[0]
+        #Rastershader Object
+        s = QgsRasterShader()
+        #Ramp Shader
+        c = QgsColorRampShader()
+        #Interpolatedshader (?)
+        c.setColorRampType(QgsColorRampShader.Discrete)
+        #stats = layerndvi.dataProvider().bandStatistics(1, QgsRasterBandStats.All)
+        i = []
+        i.append(QgsColorRampShader.ColorRampItem(100, QtGui.QColor('#00008B'), 'Wasser'))
+        #i.append(QgsColorRampShader.ColorRampItem(-0.5, QtGui.QColor(‘#fdae61’), ‘900’))
+        i.append(QgsColorRampShader.ColorRampItem(130, QtGui.QColor('#999999'), '???'))
+        #i.append(QgsColorRampShader.ColorRampItem(0.2, QtGui.QColor(‘#abdda4’), ‘2000’))
+        i.append(QgsColorRampShader.ColorRampItem(200, QtGui.QColor('#228B22'), 'Wald'))
+        c.setColorRampItemList(i)
+        s.setRasterShaderFunction(c)
+        ps = QgsSingleBandPseudoColorRenderer(layerndvi.dataProvider(), 1, s)
+        layerndvi.setRenderer(ps)
+        QgsProject.instance().addMapLayer(layerndvi)
+        classification.triggerRepaint()
+        QApplication.restoreOverrideCursor()
 
 
     def newcolor(self, flag):
-        c_water = self.dlg.colorWater.toPlainText()
-        c_veg = self.dlg.colorVeg.toPlainText()
+        c_water = self.dlg.colorWater.color()
+        c_veg = self.dlg.colorVeg.color()
         layerndvi = QgsProject.instance().mapLayersByName("NDVI")[0]
         #Rastershader Object
         s = QgsRasterShader()
@@ -258,9 +320,9 @@ class Classification:
         #Interpolatedshader (?)
         c.setColorRampType(QgsColorRampShader.Discrete)
         i = []
-        i.append(QgsColorRampShader.ColorRampItem((self.dlg.SliderWater.value()/1000), QtGui.QColor(c_water), 'Wasser'))
-        i.append(QgsColorRampShader.ColorRampItem((self.dlg.SliderVegetation.value()/1000), QtGui.QColor('#999999'), '???'))
-        i.append(QgsColorRampShader.ColorRampItem(1, QtGui.QColor(c_veg), 'Wald'))
+        i.append(QgsColorRampShader.ColorRampItem((self.dlg.SliderWater.value()+100), QtGui.QColor(c_water), 'Wasser'))
+        i.append(QgsColorRampShader.ColorRampItem((self.dlg.SliderVegetation.value()+100), QtGui.QColor('#999999'), '???'))
+        i.append(QgsColorRampShader.ColorRampItem(200, QtGui.QColor(c_veg), 'Wald'))
         c.setColorRampItemList(i)
         s.setRasterShaderFunction(c)
         ps = QgsSingleBandPseudoColorRenderer(layerndvi.dataProvider(), 1, s)
@@ -269,11 +331,10 @@ class Classification:
         layerndvi.triggerRepaint()
 
     def updateLabel_Water(self, value):
-        self.dlg.label_Water.setText(str(value/1000))
+        self.dlg.label_Water.setText(str(value/100))
 
     def updateLabel_Veg(self, value):
-        self.dlg.label_Veg.setText(str(value/1000))
-
+        self.dlg.label_Veg.setText(str(value/100))
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -293,12 +354,17 @@ class Classification:
             self.first_start = False
             self.dlg = ClassificationDialog()
             self.dlg.startndvi.clicked.connect(self.startNDVI)
+            self.dlg.ladeDatei.clicked.connect(self.ladeDatei)
+            self.dlg.startndvi_single.clicked.connect(self.startNDVI_single)
+            self.dlg.progress.setText("")
+            self.dlg.progress_single.setText("")
             self.dlg.label_Water.setText("0")
             self.dlg.SliderWater.valueChanged.connect(self.updateLabel_Water)
             self.dlg.label_Veg.setText("0.3")
             self.dlg.SliderVegetation.valueChanged.connect(self.updateLabel_Veg)
             self.dlg.color.clicked.connect(self.newcolor)
             self.dlg.setWindowFlags(Qt.WindowStaysOnTopHint)
+
 
         # show the dialog
         self.dlg.show()
@@ -308,5 +374,18 @@ class Classification:
         if result:
             # Do something useful here - delete the line containing pass and
             # substitute with your code.
+            layer = QgsProject.instance().mapLayersByName("NDVI")[0]
+            #RasterLayer to RasterCalculatorEntry
+            entries = []
+            layerndvi = QgsRasterCalculatorEntry()
+            layerndvi.ref = 'layerndvi@1'
+            layerndvi.raster = layer
+            layerndvi.bandNumber = 1
+            entries.append(layerndvi)
+            calc = QgsRasterCalculator( '("layerndvi@1" < (self.dlg.SliderWater.value()+100))*1+("layerndvi@1" > (self.dlg.SliderVeg.value()+100))*2)', self.plugin_dir+"/data/Mask.tif", 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
+            calc.processCalculation()
+            uri4 = self.plugin_dir+"/data/Mask.tif"
+            mask = "Mask"#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
+            classification = self.iface.addRasterLayer(uri4, mask)
 
             pass
