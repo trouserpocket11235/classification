@@ -22,6 +22,9 @@
      <height>32</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Mit OK wird ein Layer erzeugt, der für Wasser den Wert -1 hat, für Vegetation 1 und den Rest 0.&lt;/p&gt;&lt;p&gt;Wenn Sie einen Speicherort wählen, wird die Datei &amp;quot;Mask.tif&amp;quot; dort erzeugt.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
    </property>
@@ -68,6 +71,9 @@
    </property>
    <property name="singleStep">
     <number>1</number>
+   </property>
+   <property name="value">
+    <number>0</number>
    </property>
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
@@ -437,6 +443,9 @@
        <height>16</height>
       </rect>
      </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Wählen Sie einen Ordner um dort &amp;quot;NDVI.tif&amp;quot; zu speichern.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
       <string>NDVI speichern unter:</string>
      </property>
@@ -450,6 +459,9 @@
        <height>27</height>
       </rect>
      </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Wählen Sie einen Ordner um dort &amp;quot;NDVI.tif&amp;quot; zu speichern.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
     </widget>
    </widget>
    <widget class="QWidget" name="tab_2">
@@ -459,9 +471,9 @@
     <widget class="QgsFileWidget" name="file_single">
      <property name="geometry">
       <rect>
-       <x>90</x>
+       <x>74</x>
        <y>10</y>
-       <width>281</width>
+       <width>301</width>
        <height>27</height>
       </rect>
      </property>
@@ -469,7 +481,7 @@
     <widget class="QLabel" name="label_15">
      <property name="geometry">
       <rect>
-       <x>10</x>
+       <x>5</x>
        <y>10</y>
        <width>111</width>
        <height>16</height>
@@ -482,7 +494,7 @@
     <widget class="QLabel" name="label_16">
      <property name="geometry">
       <rect>
-       <x>0</x>
+       <x>5</x>
        <y>80</y>
        <width>131</width>
        <height>16</height>
@@ -508,7 +520,7 @@
     <widget class="QComboBox" name="combo_red">
      <property name="geometry">
       <rect>
-       <x>100</x>
+       <x>105</x>
        <y>80</y>
        <width>71</width>
        <height>22</height>
@@ -518,7 +530,7 @@
     <widget class="QComboBox" name="combo_nir">
      <property name="geometry">
       <rect>
-       <x>300</x>
+       <x>303</x>
        <y>80</y>
        <width>71</width>
        <height>22</height>
@@ -547,6 +559,9 @@
        <height>16</height>
       </rect>
      </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Wählen Sie einen Ordner um dort &amp;quot;NDVI.tif&amp;quot; zu speichern.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
       <string>NDVI speichern unter:</string>
      </property>
@@ -559,6 +574,9 @@
        <width>241</width>
        <height>27</height>
       </rect>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Wählen Sie einen Ordner um dort &amp;quot;NDVI.tif&amp;quot; zu speichern.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="options">
       <set>QFileDialog::ShowDirsOnly</set>
@@ -580,7 +598,7 @@
     <widget class="QPushButton" name="ladeDatei">
      <property name="geometry">
       <rect>
-       <x>280</x>
+       <x>285</x>
        <y>40</y>
        <width>91</width>
        <height>28</height>

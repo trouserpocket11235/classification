@@ -139,10 +139,8 @@ class Classification:
         #Red
         uri2 = self.dlg.fileRed.filePath()
 
-        #define short versions of the layernames
-        #to do: if Landsat 8, Landsat 7, ...
-        nir = "NIR"#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
-        red = "Red"#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
+        nir = "NIR"
+        red = "Red"
 
         #add Layers NIR and Red to Project
         classification = self.iface.addRasterLayer(uri, nir)
@@ -169,7 +167,7 @@ class Classification:
             entries.append(layerred)
 
             #Calculation NDVI=(NIR-Red)/(NDVI+Red)
-            calc = QgsRasterCalculator( '((("layernir@1" -  "layerred@1") / ("layernir@1" + "layerred@1"))+1)*100', uri3, 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
+            calc = QgsRasterCalculator( '(("layernir@1" -  "layerred@1") / ("layernir@1" + "layerred@1"))*100', uri3, 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
             calc.processCalculation()
             #add Layer NDVI
             ndviname = "NDVI"#+name[17:-20]+"-"+name[21:-18]+"-"+name[23:-16]
@@ -178,10 +176,10 @@ class Classification:
         else:
             #Hier muss ich den Raster Calculator aus der Toolbox benutzen, sonst ist kein temporärer Layer möglich.
             #Calculation NDVI=(NIR-Red)/(NDVI+Red)
-            ndvi_single = processing.runAndLoadResults("qgis:rastercalculator", {
+            ndvi = processing.runAndLoadResults("qgis:rastercalculator", {
                     'CELLSIZE' : 0,
                     'CRS' : None,
-                    'EXPRESSION' : '( ( ( \"NIR@1\" - \"Red@1\" ) / ( \"NIR@1\" + \"Red@1\" ) ) + 1 ) * 100',
+                    'EXPRESSION' : '( ( \"NIR@1\" - \"Red@1\" ) / ( \"NIR@1\" + \"Red@1\" ) ) * 100',
                     'EXTENT' : None,
                     'LAYERS' : ["NIR"],
                     'OUTPUT' : 'TEMPORARY_OUTPUT' } )
@@ -195,9 +193,9 @@ class Classification:
         c = QgsColorRampShader()
         c.setColorRampType(QgsColorRampShader.Discrete)
         i = []
-        i.append(QgsColorRampShader.ColorRampItem(100, QtGui.QColor('#00008B'), 'Wasser'))
-        i.append(QgsColorRampShader.ColorRampItem(130, QtGui.QColor('#999999'), '???'))
-        i.append(QgsColorRampShader.ColorRampItem(200, QtGui.QColor('#228B22'), 'Wald'))
+        i.append(QgsColorRampShader.ColorRampItem(0, QtGui.QColor('#00008B'), 'Wasser'))
+        i.append(QgsColorRampShader.ColorRampItem(30, QtGui.QColor('#999999'), '???'))
+        i.append(QgsColorRampShader.ColorRampItem(100, QtGui.QColor('#228B22'), 'Vegetation'))
         c.setColorRampItemList(i)
         s.setRasterShaderFunction(c)
         ps = QgsSingleBandPseudoColorRenderer(ndvi.dataProvider(), 1, s)
@@ -207,8 +205,6 @@ class Classification:
         QApplication.restoreOverrideCursor()
 
     def ladeDatei(self):
-
-        #NIR
         uri = self.dlg.file_single.filePath()
         name = "Ausgangsdaten"
         classification = self.iface.addRasterLayer(uri, name)
@@ -246,7 +242,7 @@ class Classification:
             layerred.bandNumber = band_red
             entries.append(layerred)
             #Calculation NDVI=(NIR-Red)/(NDVI+Red)
-            calc = QgsRasterCalculator( '((("layernir@1" -  "layerred@1") / ("layernir@1" + "layerred@1"))+1)*100', uri, 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
+            calc = QgsRasterCalculator( '(("layernir@1" -  "layerred@1") / ("layernir@1" + "layerred@1"))*100', uri, 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
             calc.processCalculation()
 
             #add Layer NDVI
@@ -260,7 +256,7 @@ class Classification:
             ndvi_single = processing.runAndLoadResults("qgis:rastercalculator", {
                     'CELLSIZE' : 0,
                     'CRS' : None,
-                    'EXPRESSION' : '( ( ( \"Ausgangsdaten@{0}\" - \"Ausgangsdaten@{1}\" ) / ( \"Ausgangsdaten@{0}\" + \"Ausgangsdaten@{1}\" ) ) + 1 ) * 100'.format(band_nir, band_red),
+                    'EXPRESSION' : '( ( \"Ausgangsdaten@{0}\" - \"Ausgangsdaten@{1}\" ) / ( \"Ausgangsdaten@{0}\" + \"Ausgangsdaten@{1}\" ) ) * 100'.format(band_nir, band_red),
                     'EXTENT' : None,
                     'LAYERS' : ["Ausgangsdaten"],
                     'OUTPUT' : 'TEMPORARY_OUTPUT' } )
@@ -274,9 +270,9 @@ class Classification:
         c = QgsColorRampShader()
         c.setColorRampType(QgsColorRampShader.Discrete)
         i = []
-        i.append(QgsColorRampShader.ColorRampItem(100, QtGui.QColor('#00008B'), 'Wasser'))
-        i.append(QgsColorRampShader.ColorRampItem(130, QtGui.QColor('#999999'), '???'))
-        i.append(QgsColorRampShader.ColorRampItem(200, QtGui.QColor('#228B22'), 'Wald'))
+        i.append(QgsColorRampShader.ColorRampItem(0, QtGui.QColor('#00008B'), 'Wasser'))
+        i.append(QgsColorRampShader.ColorRampItem(30, QtGui.QColor('#999999'), '???'))
+        i.append(QgsColorRampShader.ColorRampItem(100, QtGui.QColor('#228B22'), 'Vegetation'))
         c.setColorRampItemList(i)
         s.setRasterShaderFunction(c)
         ps = QgsSingleBandPseudoColorRenderer(ndvi.dataProvider(), 1, s)
@@ -304,9 +300,9 @@ class Classification:
         c = QgsColorRampShader()
         c.setColorRampType(QgsColorRampShader.Discrete)
         i = []
-        i.append(QgsColorRampShader.ColorRampItem((self.dlg.SliderWater.value()+100), QtGui.QColor(c_water), 'Wasser'))
-        i.append(QgsColorRampShader.ColorRampItem((self.dlg.SliderVegetation.value()+100), QtGui.QColor('#999999'), '???'))
-        i.append(QgsColorRampShader.ColorRampItem(200, QtGui.QColor(c_veg), 'Wald'))
+        i.append(QgsColorRampShader.ColorRampItem((self.dlg.SliderWater.value()), QtGui.QColor(c_water), 'Wasser'))
+        i.append(QgsColorRampShader.ColorRampItem((self.dlg.SliderVegetation.value()), QtGui.QColor('#999999'), '???'))
+        i.append(QgsColorRampShader.ColorRampItem(100, QtGui.QColor(c_veg), 'Vegetation'))
         c.setColorRampItemList(i)
         s.setRasterShaderFunction(c)
         ps = QgsSingleBandPseudoColorRenderer(layerndvi.dataProvider(), 1, s)
@@ -387,7 +383,7 @@ class Classification:
                 layerndvi.bandNumber = 1
                 entries.append(layerndvi)
 
-                calc = QgsRasterCalculator( '(("layerndvi@1" < ({0}+100))*1+("layerndvi@1" > ({1}+100))*2)'.format(self.dlg.SliderWater.value(), self.dlg.SliderVegetation.value()), uri, 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
+                calc = QgsRasterCalculator( '(("layerndvi@1" < {0})*)-1)+("layerndvi@1" > {1})*1)'.format(self.dlg.SliderWater.value(), self.dlg.SliderVegetation.value()), uri, 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
                 calc.processCalculation()
                 mask = "Mask"
                 classification = self.iface.addRasterLayer(uri, mask)
@@ -399,7 +395,7 @@ class Classification:
                 mask_calc = processing.runAndLoadResults("qgis:rastercalculator", {
                         'CELLSIZE' : 0,
                         'CRS' : None,
-                        'EXPRESSION' : ' ( ( \"NDVI@1\" < ( {0} + 100 ) ) * 1 + ( \"NDVI@1\" > ( {1} + 100 ) ) * 2 )'.format(self.dlg.SliderWater.value(), self.dlg.SliderVegetation.value()),
+                        'EXPRESSION' : ' ( ( \"NDVI@1\" <  {0} ) * (-1) + ( \"NDVI@1\" >  {1} ) * 1 )'.format(self.dlg.SliderWater.value(), self.dlg.SliderVegetation.value()),
                         'EXTENT' : None,
                         'LAYERS' : ["NDVI"],
                         'OUTPUT' : 'TEMPORARY_OUTPUT' } )
@@ -417,9 +413,9 @@ class Classification:
             c = QgsColorRampShader()
             c.setColorRampType(QgsColorRampShader.Discrete)
             i = []
-            i.append(QgsColorRampShader.ColorRampItem(0, QtGui.QColor('#999999'), '???????'))
-            i.append(QgsColorRampShader.ColorRampItem(1, QtGui.QColor(c_water), 'Wasser'))
-            i.append(QgsColorRampShader.ColorRampItem(2, QtGui.QColor(c_veg), 'Wald'))
+            i.append(QgsColorRampShader.ColorRampItem(-1, QtGui.QColor(c_water), 'Wasser'))
+            i.append(QgsColorRampShader.ColorRampItem(0, QtGui.QColor('#999999'), 'alles andere'))
+            i.append(QgsColorRampShader.ColorRampItem(1, QtGui.QColor(c_veg), 'Vegetation'))
             c.setColorRampItemList(i)
             s.setRasterShaderFunction(c)
             ps = QgsSingleBandPseudoColorRenderer(mask.dataProvider(), 1, s)
