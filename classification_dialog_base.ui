@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>410</width>
-    <height>571</height>
+    <height>614</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>130</x>
-     <y>530</y>
+     <y>570</y>
      <width>261</width>
      <height>32</height>
     </rect>
@@ -146,7 +146,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Farbe (Hex)</string>
+    <string>Farbe</string>
    </property>
    <property name="wordWrap">
     <bool>true</bool>
@@ -155,10 +155,10 @@
   <widget class="QLabel" name="label_6">
    <property name="geometry">
     <rect>
-     <x>286</x>
-     <y>315</y>
-     <width>101</width>
-     <height>41</height>
+     <x>240</x>
+     <y>330</y>
+     <width>141</width>
+     <height>31</height>
     </rect>
    </property>
    <property name="text">
@@ -257,7 +257,7 @@
    <property name="geometry">
     <rect>
      <x>16</x>
-     <y>501</y>
+     <y>541</y>
      <width>161</width>
      <height>16</height>
     </rect>
@@ -314,7 +314,7 @@
     </color>
    </property>
   </widget>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="reset">
    <property name="geometry">
     <rect>
      <x>336</x>
@@ -337,7 +337,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -449,19 +449,6 @@
        <width>241</width>
        <height>27</height>
       </rect>
-     </property>
-    </widget>
-    <widget class="QLabel" name="progress">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>190</y>
-       <width>121</width>
-       <height>16</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>TextLabel</string>
      </property>
     </widget>
    </widget>
@@ -603,32 +590,32 @@
       <string>Lade</string>
      </property>
     </widget>
-    <widget class="QLabel" name="progress_single">
-     <property name="geometry">
-      <rect>
-       <x>10</x>
-       <y>190</y>
-       <width>121</width>
-       <height>16</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>TextLabel</string>
-     </property>
-    </widget>
    </widget>
   </widget>
-  <widget class="QgsFileWidget" name="mQgsFileWidget_4">
+  <widget class="QgsFileWidget" name="ergebnis">
    <property name="geometry">
     <rect>
      <x>190</x>
-     <y>500</y>
+     <y>540</y>
      <width>201</width>
      <height>27</height>
     </rect>
    </property>
    <property name="options">
     <set>QFileDialog::ShowDirsOnly</set>
+   </property>
+  </widget>
+  <widget class="QCheckBox" name="checkergebnis">
+   <property name="geometry">
+    <rect>
+     <x>16</x>
+     <y>510</y>
+     <width>151</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Ergebnis speichern</string>
    </property>
   </widget>
  </widget>
