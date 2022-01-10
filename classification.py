@@ -383,7 +383,7 @@ class Classification:
                 layerndvi.bandNumber = 1
                 entries.append(layerndvi)
 
-                calc = QgsRasterCalculator( '(("layerndvi@1" < {0})*)-1)+("layerndvi@1" > {1})*1)'.format(self.dlg.SliderWater.value(), self.dlg.SliderVegetation.value()), uri, 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
+                calc = QgsRasterCalculator( '(("layerndvi@1" < {0})*(-1)+("layerndvi@1" > {1})*1)'.format(self.dlg.SliderWater.value(), self.dlg.SliderVegetation.value()), uri, 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
                 calc.processCalculation()
                 mask = "Mask"
                 classification = self.iface.addRasterLayer(uri, mask)
