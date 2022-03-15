@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>410</width>
-    <height>614</height>
+    <height>622</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>130</x>
-     <y>570</y>
+     <y>580</y>
      <width>261</width>
      <height>32</height>
     </rect>
@@ -61,7 +61,7 @@
     </rect>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Die Voreinstellung für Wasser liegt bei einem NDVI &amp;lt;0.&lt;/p&gt;&lt;p&gt;Denken Sie es wurden zu viele Wasserflächen erkannt, so müssen Sie den Regler etwas nach Links ziehen.&lt;/p&gt;&lt;p&gt;Denken Sie es wurden zu wenig Wasserflächen erkannt, so müssen Sie den Regler etwas nach Rechts ziehen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Die Voreinstellung für Wasser liegt bei einem NDVI &amp;lt;0.&lt;/p&gt;&lt;p&gt;Denken Sie es wurden zu viele Wasserflächen erkannt, so müssen Sie den Regler etwas nach links ziehen.&lt;/p&gt;&lt;p&gt;Denken Sie es wurden zu wenig Wasserflächen erkannt, so müssen Sie den Regler etwas nach rechts ziehen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="minimum">
     <number>-100</number>
@@ -89,7 +89,7 @@
     </rect>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Die Voreinstellung für Vegetation liegt bei einem NDVI &amp;gt;0.3.&lt;/p&gt;&lt;p&gt;Denken Sie es wurden zu viele Vegetationsflächen erkannt, so müssen Sie den Regler etwas nach Rechts ziehen.&lt;/p&gt;&lt;p&gt;Denken Sie es wurden zu wenig Vegetationsflächen erkannt, so müssen Sie den Regler etwas nach Links ziehen.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Die Voreinstellung für Vegetation liegt bei einem NDVI &amp;gt;0.3.&lt;/p&gt;&lt;p&gt;Denken Sie es wurden zu viele Vegetationsflächen erkannt, so müssen Sie den Regler etwas nach rechts ziehen.&lt;/p&gt;&lt;p&gt;Denken Sie es wurden zu wenig Vegetationsflächen erkannt, so müssen Sie den Regler etwas nach links ziehen.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="minimum">
     <number>0</number>
@@ -628,12 +628,25 @@
     <rect>
      <x>16</x>
      <y>510</y>
-     <width>151</width>
+     <width>191</width>
      <height>20</height>
     </rect>
    </property>
    <property name="text">
-    <string>Ergebnis speichern</string>
+    <string> Raster ergebnis speichern</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="vectorLayer">
+   <property name="geometry">
+    <rect>
+     <x>9</x>
+     <y>582</y>
+     <width>181</width>
+     <height>28</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Ok und Vektorlayer erzeugen</string>
    </property>
   </widget>
  </widget>

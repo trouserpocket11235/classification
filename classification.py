@@ -39,6 +39,8 @@ from .resources import *
 from .classification_dialog import ClassificationDialog
 import os.path
 import processing
+import gdal
+
 
 
 class Classification:
@@ -318,6 +320,51 @@ class Classification:
         #Label von Vegetation mit dem Slider Updaten. Slider kann nur Integer, also durch 100
         self.dlg.label_Veg.setText(str(value/100))
 
+    def vectorLayer(self):
+        reply = QMessageBox.question(ClassificationDialog(), 'Achtung!',
+                         'Dieser Vorgang kann sehr lange dauern. Möglicherweise mehrere Stunden. Sind Sie sicher, dass Sie fortfahren möchten?', QMessageBox.Yes, QMessageBox.No)
+
+        if reply == QtGui.QMessageBox.Yes:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            layer = QgsProject.instance().mapLayersByName("NDVI")[0]
+
+            if self.dlg.checkergebnis.isChecked():
+                ergeb_path = self.dlg.ergebnis.filePath()
+                uri = os.path.join(ergeb_path,"Mask.tif")
+
+                entries = []
+                layerndvi = QgsRasterCalculatorEntry()
+                layerndvi.ref = 'layerndvi@1'
+                layerndvi.raster = layer
+                layerndvi.bandNumber = 1
+                entries.append(layerndvi)
+
+                calc = QgsRasterCalculator( '(("layerndvi@1" < {0})*(-1)+("layerndvi@1" > {1})*1)'.format(self.dlg.SliderWater.value(), self.dlg.SliderVegetation.value()), uri, 'GTiff', layer.extent(), layer.width(), layer.height(), entries )
+                calc.processCalculation()
+                mask = "Mask"
+                classification = self.iface.addRasterLayer(uri, mask)
+                mask = QgsProject.instance().mapLayersByName(mask)[0]
+                #Umwandlung in Polygonen mit GDAL Polygonize
+                vec_calc = processing.runAndLoadResults("gdal:polygonize", { 'BAND' : 1, 'EIGHT_CONNECTEDNESS' : False, 'EXTRA' : '', 'FIELD' : 'Class', 'INPUT' : uri, 'OUTPUT' : 'TEMPORARY_OUTPUT' })
+
+            else:
+                #Hier muss ich den Raster Calculator aus der Toolbox benutzen, sonst ist kein temporärer Layer möglich.
+                #Calculation NDVI=(NIR-Red)/(NDVI+Red)
+                mask_calc = processing.runAndLoadResults("qgis:rastercalculator", {
+                        'CELLSIZE' : 0,
+                        'CRS' : None,
+                        'EXPRESSION' : ' ( ( \"NDVI@1\" <  {0} ) * (-1) + ( \"NDVI@1\" >  {1} ) * 1 )'.format(self.dlg.SliderWater.value(), self.dlg.SliderVegetation.value()),
+                        'EXTENT' : None,
+                        'LAYERS' : ["NDVI"],
+                        'OUTPUT' : 'TEMPORARY_OUTPUT' } )
+
+                mask = QgsProject.instance().mapLayersByName("Output")[0]
+                mask.setName('Mask')
+                #Umwandlung in Polygonen mit GDAL Polygonize
+                vec_calc = processing.runAndLoadResults("gdal:polygonize", { 'BAND' : 1, 'EIGHT_CONNECTEDNESS' : False, 'EXTRA' : '', 'FIELD' : 'Class', 'INPUT' : mask, 'OUTPUT' : 'TEMPORARY_OUTPUT' })
+
+
+
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
@@ -338,11 +385,11 @@ class Classification:
             #benutze self.dlg für den Plugin Dialog
             self.dlg = ClassificationDialog()
 
-            #Tab 1 konfigurieren, Ordner zum speichern auswählen, Start Button definieren
+            #Tab 1 konfigurieren, Ordner zum Speichern auswählen, Start Button definieren
             self.dlg.savendvi.setStorageMode(1)
             self.dlg.startndvi.clicked.connect(self.startNDVI)
 
-            #Tab 2 konfigurieren, Laden der einzelnen Datei, Ordner zum speichern auswählen, Start Button definieren
+            #Tab 2 konfigurieren, Laden der einzelnen Datei, Ordner zum Speichern auswählen, Start Button definieren
             self.dlg.ladeDatei.clicked.connect(self.ladeDatei)
             self.dlg.savendvi_single.setStorageMode(1)
             self.dlg.startndvi_single.clicked.connect(self.startNDVI_single)
@@ -358,8 +405,8 @@ class Classification:
             #Ergebnisoptionen konfigurieren
             self.dlg.ergebnis.setStorageMode(1)
 
-            #Fenster immer im Vordergrund bis OK oder Abbrechen
-            self.dlg.setWindowFlags(Qt.WindowStaysOnTopHint)
+            #Button Vektorlayer verknüpfen
+            self.dlg.vectorLayer.clicked.connect(self.vectorLayer)
 
 
 
@@ -368,6 +415,7 @@ class Classification:
         # Run the dialog event loop
         result = self.dlg.exec_()
         # See if OK was pressed
+
         if result:
             QApplication.setOverrideCursor(Qt.WaitCursor)
             layer = QgsProject.instance().mapLayersByName("NDVI")[0]
@@ -402,7 +450,6 @@ class Classification:
 
                 mask = QgsProject.instance().mapLayersByName("Output")[0]
                 mask.setName('Mask')
-
             #Farbwerte abfragen
             c_water = self.dlg.colorWater.color()
             c_veg = self.dlg.colorVeg.color()
